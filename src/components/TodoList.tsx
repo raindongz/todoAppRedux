@@ -21,14 +21,11 @@ const useStyles = makeStyles((theme: Theme) =>
 interface ListInterface{
     listId:string
 }
-const selectListById=(state:any, listId:string)=>{
-return state.todoLists.find((list:ListInterface)=>list.listId===listId);
-}
 const selectItems=(state:any)=>state.todoItems.map((item:any)=>item);
 
 const TodoList = (props: ListInterface) => {
     const classes = useStyles();
-    const list=useSelector((state)=>selectListById(state, props.listId))
+
     const items=useSelector(selectItems);
     return (
         <div className='todo-list-view'>

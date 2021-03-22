@@ -1,63 +1,46 @@
-import React from "react";
+import React, { useEffect } from "react";
 import TodoListService from "../../Services/TodoListService";
+import { TodoListModel } from "../../moduls";
 
-const initialState = [
-  {
-    listId: "0",
-    listName: "list1",
-    userId: "RUNDONG",
-    items: [],
-  },
-  {
-    listId: "1",
-    listName: "list2",
-    userId: "RUNDONG",
-    items: [],
-  },
-];
+let initialState:TodoListModel[]=[];
+
 
 function TodoListReducer(state = initialState, action: any) {
+
   switch (action.type) {
     //add Todo List
+    case "GET_ALL_LIST":{
+      return action.payload
+    }
     case "ADD_LIST": {
-      const newList={
-        listId: "",
-        listName: action.payload,
-        userId:"RUNDONG",
-        items:[],
-      }
-      TodoListService.create(newList).then((response)=>{
-        const returnedList=response.data;
-        return [...state, returnedList];
-      })
-      return state;
-
+      return [
+        ...state,
+        {
+          listId: action.payload.listId,
+          listName: action.payload.listName,
+          userId: action.payload.userId,
+          items: action.payload.items,
+        },
+      ];
     }
     case "DELETE_LIST": {
-      TodoListService.remove(action.payload).then((response)=>{
-        if(response.data){
-          return state.filter((list:any) => list.listId !== action.payload);
-        }
-      })
-      return state;
+      return state.filter((list) => list.listId !== action.payload);
     }
     case "CHANGE_LIST_NAME": {
-      const newList=state.find((list:any)=>list.listId===action.payload.listId)
-      newList!.listName=action.payload.listName;
-      TodoListService.update(newList).then((response)=>{
-        return state.map((list:any)=>{
-          if(list.id===action.payload.listId){
-            return {
-              ...list,
-              listName: response.data.listName,
-            }
-          }
-          return list;
-        })
-      })
-      return state;
+      return state.map((list) => {
+        if (list.listId === action.payload.listId) {
+          return {
+            ...list,
+            listName: action.payload.listName,
+          };
+        }
+        return list;
+      });
     }
 
+    case "DELETE_ALL_LIST": {
+      return [];
+    }
     default:
       return state;
   }

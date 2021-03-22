@@ -10,7 +10,6 @@ import TodoApp from "./components/TodoApp";
 function App() {
   return (
     <div className="App">
-      <h1>TodoApp</h1>
         <TodoApp />
     </div>
   );

@@ -36,7 +36,9 @@ import classes from "*.module.css";
 import ListInterface from "./TodoList";
 import { useDispatch, useSelector } from "react-redux";
 import TodoList from "./TodoList";
-import {TodoListModel} from "../moduls";
+import {TodoItemModel, TodoListModel} from "../moduls";
+import TodoListService from "../Services/TodoListService";
+import TodoItemService from "../Services/TodoItemService";
 
 //snackbar function and style
 function Alert(props: AlertProps) {
@@ -118,10 +120,8 @@ export default function TodoApp() {
   const [NewItemSnackBar, setNewItemSnakeBar] = React.useState(false);
   const [moveItemSnackBarOpen, setMoveItemSnackBarOpen] = useState(false);
 
-  //variable for move item window open
-  const [moveItemWindowOpen, setMoveItemWindowOpen] = useState(false);
-  //selected item user want to move
-  const [currentMoveItem, setCurrentMoveItem] = useState();
+
+
 
   //dialog for list name already exist pop up window
   const [listExistWindowOpen, setListExistWindowOpen] = useState(false);
@@ -129,6 +129,25 @@ export default function TodoApp() {
   const [selected, setSelected] = useState(0);
   //popup window for change list name and add new list
   const [open, setOpen] = React.useState(false);
+
+  useEffect(()=>{
+    TodoListService.getAll().then((response)=>{
+          if(response.data){
+            dispatch({type:"GET_ALL_LIST", payload:response.data})
+          }
+        }
+    )
+  },[])
+
+  useEffect(()=>{
+    if(currentList){
+    TodoItemService.getAllItems(currentList.listId).then((response)=>{
+        if(response.data){
+          dispatch({type:"GET_ALL_ITEMS", payload:response.data})
+        }
+      })
+    }
+  },[currentList?.listId])
 
   //tab switch
   function handleTabChange(event: React.ChangeEvent<{}>, newValue: number) {
@@ -148,15 +167,6 @@ export default function TodoApp() {
   function handleClose() {
     setOpen(false);
     setShowForChange(false);
-  }
-
-  //move Item to another list
-  function handleMoveItemClick(item: any) {
-    setMoveItemWindowOpen(true);
-    setCurrentMoveItem(item);
-  }
-  function handleMoveItemWindowClose() {
-    setMoveItemWindowOpen(false);
   }
 
 
@@ -217,7 +227,7 @@ export default function TodoApp() {
         return;
       }
       //create list in backend
-        addNewList(inputState);
+      addNewList(inputState);
       if (inputRef && inputRef.current) {
         inputRef.current.value = "";
       }
@@ -246,7 +256,22 @@ export default function TodoApp() {
       if (listName.trim() === "") {
         return;
       }
-    dispatch({type: "CHANGE_LIST_NAME", payload: {listId:currentList!.listId, listName:listName}})
+      const newList={
+        ...currentList,
+        listName:listName,
+      }
+      TodoListService.update(newList).then((response) => {
+        if (response.data) {
+          dispatch({
+            type: "CHANGE_LIST_NAME",
+            payload: { listId: currentList!.listId, listName: listName },
+          });
+        }
+      }).catch(()=>{
+
+        setListExistWindowOpen(true);
+
+      });
 
       setShowForChange(false);
       setOpen(false);
@@ -256,7 +281,11 @@ export default function TodoApp() {
   //call data base to delete list name
   const deleteList = () => {
     if (currentList) {
-      dispatch({type:"DELETE_LIST", payload:currentList.listId})
+      TodoListService.remove(currentList.listId).then((response) => {
+        if (response.data) {
+          dispatch({ type: "DELETE_LIST", payload: currentList.listId });
+        }
+      });
     }
     //set current tab
     setSelected(0);
@@ -266,23 +295,47 @@ export default function TodoApp() {
   };
 
   //add new list
-  const addNewList = (listName:string) => {
+  const addNewList = (listName: string) => {
     if (listName.trim() === "") {
       return;
     }
-      dispatch({type:"ADD_LIST", payload: listName})
+    const newList = {
+      listId: "",
+      listName: listName,
+      userId: "RUNDONG",
+      items: [],
+    };
+    TodoListService.create(newList).then((response) => {
+      if (response.data) {
+        dispatch({
+          type: "ADD_LIST",
+          payload: {
+            listId: response.data.listId,
+            listName: response.data.listName,
+            userId: response.data.userId,
+            items: response.data.items,
+          },
+        });
+      }
+    }).catch(()=>{
+      setListExistWindowOpen(true);
+    });
+
     setOpen(false);
     //if only one list left then
   };
 
   //reset whole Application
   function resetApp() {
-
     setShowForChange(false);
     setOpen(false);
+    TodoListService.removeAll().then((response)=>{
+      if(response.data){
+        dispatch({type:"DELETE_ALL_LIST", payload: null});
+        dispatch({type:"DELETE_ALL_ITEMS", payload:null});
+      }
+    })
   }
-function handleDragDownMenuChange(){}
-function handleMoveItemToList(){}
   return (
     <div className={classes.root}>
       <React.Fragment>
@@ -318,56 +371,6 @@ function handleMoveItemToList(){}
               Delete item successful!
             </Alert>
           </Snackbar>
-
-          {/*move Item Window dialog*/}
-          <div>
-            <Dialog
-              open={moveItemWindowOpen}
-              onClose={handleMoveItemWindowClose}
-              aria-labelledby="draggable-dialog-title"
-            >
-              <DialogTitle
-                style={{ cursor: "move" }}
-                id="draggable-dialog-title"
-              >
-                choose the list you want move to
-              </DialogTitle>
-
-              <FormControl>
-                <InputLabel id="demo-mutiple-name-label">List Name</InputLabel>
-                <Select
-                  labelId="demo-mutiple-name-label"
-                  autoFocus
-                  variant="filled"
-                  MenuProps={MenuProps}
-                  onChange={handleDragDownMenuChange}
-                >
-                  {todoLists.map((list: any) =>
-                    list.listId !== currentList?.listId ? (
-                      <MenuItem value={list.listId}>{list.listName}</MenuItem>
-                    ) : null
-                  )}
-                </Select>
-              </FormControl>
-
-              <DialogActions>
-                <Button
-                  autoFocus
-                  onClick={handleMoveItemToList}
-                  color="primary"
-                >
-                  Submit
-                </Button>
-                <Button
-                  autoFocus
-                  onClick={handleMoveItemWindowClose}
-                  color="primary"
-                >
-                  Cancel
-                </Button>
-              </DialogActions>
-            </Dialog>
-          </div>
 
           {/* List name already exist dialog*/}
           <div>
