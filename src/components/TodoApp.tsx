@@ -4,14 +4,8 @@ import {
   Box,
   Button,
   DialogContentText,
-  FormControl,
   Grid,
-  GridList,
-  InputLabel,
   makeStyles,
-  MenuItem,
-  RadioGroup,
-  Select,
   Tab,
   Tabs,
   TextField,
@@ -19,7 +13,6 @@ import {
   Typography,
 } from "@material-ui/core";
 //to install shortid 1:npm install. 2:npm install -D @types/module-name  3:npm i --save-dev shortid@2.2.15
-
 import CssBaseline from "@material-ui/core/CssBaseline";
 import Container from "@material-ui/core/Container";
 import DeleteIcon from "@material-ui/icons/Delete";
@@ -30,80 +23,34 @@ import DialogTitle from "@material-ui/core/DialogTitle";
 import BorderColorIcon from "@material-ui/icons/BorderColor";
 import CachedIcon from "@material-ui/icons/Cached";
 //import snackbar
-import Snackbar from "@material-ui/core/Snackbar";
-import MuiAlert, { AlertProps } from "@material-ui/lab/Alert";
-import classes from "*.module.css";
-import ListInterface from "./TodoList";
 import { useDispatch, useSelector } from "react-redux";
 import TodoList from "./TodoList";
-import {TodoItemModel, TodoListModel} from "../moduls";
 import TodoListService from "../Services/TodoListService";
 import TodoItemService from "../Services/TodoItemService";
+import {
+  ADD_LIST,
+  CHANGE_LIST_NAME,
+  DELETE_ALL_LIST,
+  DELETE_LIST,
+  GET_ALL_LIST,
+} from "../redux/actionTypes/ListActionTypes";
+import {
+  DELETE_ALL_ITEMS,
+  GET_ALL_ITEMS,
+} from "../redux/actionTypes/ItemActionTypes";
+import { a11yProps, TabPanel, useAppStyles } from "../UIStyles/TodoAppStyle";
+import ListAlreadyExistHandler from "../ErrorHandler/ListAlreadyExistHandler";
 
-//snackbar function and style
-function Alert(props: AlertProps) {
-  return <MuiAlert elevation={6} variant="filled" {...props} />;
-}
-//drag down menu style
-const ITEM_HEIGHT = 48;
-const ITEM_PADDING_TOP = 8;
-const MenuProps = {
-  PaperProps: {
-    style: {
-      maxHeight: ITEM_HEIGHT * 4.5 + ITEM_PADDING_TOP,
-      width: 250,
-    },
-  },
-};
-//tab and panel declaration staff
-interface TabPanelProps {
-  children?: React.ReactNode;
-  index: any;
-  value: any;
-}
-//tabpanel style
-function TabPanel(props: TabPanelProps) {
-  const { children, value, index, ...other } = props;
-
-  return (
-    <div
-      role="tabpanel"
-      hidden={value !== index}
-      id={`scrollable-auto-tabpanel-${index}`}
-      aria-labelledby={`scrollable-auto-tab-${index}`}
-      {...other}
-    >
-      {value === index && (
-        <Box p={3}>
-          <Typography>{children}</Typography>
-        </Box>
-      )}
-    </div>
-  );
-}
-//for matching tab and panel
-function a11yProps(index: any) {
-  return {
-    id: `scrollable-auto-tab-${index}`,
-    "aria-controls": `scrollable-auto-tabpanel-${index}`,
-  };
-}
-
-const useStyles = makeStyles((theme: Theme) => ({
-  root: {
-    flexGrow: 1,
-    width: "100%",
-    backgroundColor: theme.palette.background.paper,
-  },
-}));
-
+//get all lists from state
 const selectLists = (state: any) => {
   return state.todoLists.map((list: any) => list);
 };
+//todo App function starts here
 export default function TodoApp() {
-  const classes = useStyles();
+  const classes = useAppStyles();
   //setup selector
   const todoLists = useSelector(selectLists);
+  //set up dispatch
   const dispatch = useDispatch();
   //input for change List name and add newList
   const inputRef = React.useRef<HTMLInputElement>(null);
@@ -112,47 +59,43 @@ export default function TodoApp() {
   //variable for switch list name change model and add new list model
   const [showForChange, setShowForChange] = useState(false);
 
-  //current List user is viewing
-  const [currentList, setCurrentList] = useState<TodoListModel>();
-
-  //item snack bar for delete & create & move item
-  const [ItemSnackBarOpen, setItemSnackbarOpen] = React.useState(false);
-  const [NewItemSnackBar, setNewItemSnakeBar] = React.useState(false);
-  const [moveItemSnackBarOpen, setMoveItemSnackBarOpen] = useState(false);
-
-
-
-
-  //dialog for list name already exist pop up window
-  const [listExistWindowOpen, setListExistWindowOpen] = useState(false);
-  //selected is for current tab and panel, currentList Id is for select the list with clicking the tab
-  const [selected, setSelected] = useState(0);
   //popup window for change list name and add new list
   const [open, setOpen] = React.useState(false);
 
-  useEffect(()=>{
-    TodoListService.getAll().then((response)=>{
-          if(response.data){
-            dispatch({type:"GET_ALL_LIST", payload:response.data})
-          }
-        }
-    )
-  },[])
+  //current List user is viewing, will be set when user click the tab
+  const [currentList, setCurrentList] = useState<TodoListModel>();
 
-  useEffect(()=>{
-    if(currentList){
-    TodoItemService.getAllItems(currentList.listId).then((response)=>{
-        if(response.data){
-          dispatch({type:"GET_ALL_ITEMS", payload:response.data})
+  //dialog for list name already exist pop up window
+  const [listExistWindowOpen, setListExistWindowOpen] = useState(false);
+
+  //selected is for current tab and panel, currentList Id is for select the list with clicking the tab
+  const [selected, setSelected] = useState(0);
+
+  //retrieve all lists from data base and setup initial state
+  useEffect(() => {
+    TodoListService.getAll().then((response) => {
+      if (response.data) {
+        dispatch({ type: GET_ALL_LIST, todoLists: response.data });
+      }
+    });
+  }, []);
+  //retrieve current list items from database based on current List and setup as initial state
+  //will load every time when user click different tab
+  useEffect(() => {
+    if (currentList) {
+      TodoItemService.getAllItems(currentList.listId).then((response) => {
+        if (response.data) {
+          dispatch({ type: GET_ALL_ITEMS, items: response.data });
         }
-      })
+      });
     }
-  },[currentList?.listId])
+  }, [currentList?.listId]);
 
   //tab switch
   function handleTabChange(event: React.ChangeEvent<{}>, newValue: number) {
     setSelected(newValue);
   }
+
   //select current list by clicking tab
   function handleCurrentListSelect(list: any) {
     setCurrentList(list);
@@ -169,48 +112,6 @@ export default function TodoApp() {
     setShowForChange(false);
   }
 
-
-
-  const ItemDeleteSnackBar = () => {
-    setNewItemSnakeBar(false);
-    setMoveItemSnackBarOpen(false);
-    setItemSnackbarOpen(true);
-  };
-  const ItemDeleteSnackBarClose = (
-    event?: React.SyntheticEvent,
-    reason?: string
-  ) => {
-    if (reason === "clickaway") {
-      return;
-    }
-
-    setItemSnackbarOpen(false);
-  };
-  //new item snack bar
-  const NewItemSnackBarOpen = () => {
-    setMoveItemSnackBarOpen(false);
-    setItemSnackbarOpen(false);
-    setNewItemSnakeBar(true);
-  };
-  //close new item snackBar
-  const handleNewItemClose = (
-    event?: React.SyntheticEvent,
-    reason?: string
-  ) => {
-    if (reason === "clickaway") {
-      return;
-    }
-    setNewItemSnakeBar(false);
-  };
-  //moveitem snack bars
-  function handleMoveItemSnackBarOpen() {
-    setNewItemSnakeBar(false);
-    setItemSnackbarOpen(false);
-    setMoveItemSnackBarOpen(true);
-  }
-  function handleMoveItemSnackBarClose() {
-    setMoveItemSnackBarOpen(false);
-  }
   //List CRUD
   //List CRUD start here
   //this function is used to change list name and add new list if showForChange is
@@ -256,22 +157,24 @@ export default function TodoApp() {
       if (listName.trim() === "") {
         return;
       }
-      const newList={
+      const newList = {
         ...currentList,
-        listName:listName,
-      }
-      TodoListService.update(newList).then((response) => {
-        if (response.data) {
-          dispatch({
-            type: "CHANGE_LIST_NAME",
-            payload: { listId: currentList!.listId, listName: listName },
-          });
-        }
-      }).catch(()=>{
-
-        setListExistWindowOpen(true);
-
-      });
+        listName: listName,
+      };
+      TodoListService.update(newList)
+        .then((response) => {
+          if (response.data) {
+            dispatch({
+              type: CHANGE_LIST_NAME,
+              listId: currentList!.listId,
+              listName: listName,
+            });
+          }
+        })
+        .catch((error) => {
+          console.log(error.response);
+          setListExistWindowOpen(true);
+        });
 
       setShowForChange(false);
       setOpen(false);
@@ -283,15 +186,13 @@ export default function TodoApp() {
     if (currentList) {
       TodoListService.remove(currentList.listId).then((response) => {
         if (response.data) {
-          dispatch({ type: "DELETE_LIST", payload: currentList.listId });
+          dispatch({ type: DELETE_LIST, listId: currentList.listId });
         }
       });
     }
     //set current tab
     setSelected(0);
     setCurrentList(todoLists[0]);
-    //copy.splice( -1, 1 )
-    //setTodoLists( copy )
   };
 
   //add new list
@@ -305,21 +206,20 @@ export default function TodoApp() {
       userId: "RUNDONG",
       items: [],
     };
-    TodoListService.create(newList).then((response) => {
-      if (response.data) {
-        dispatch({
-          type: "ADD_LIST",
-          payload: {
-            listId: response.data.listId,
-            listName: response.data.listName,
-            userId: response.data.userId,
-            items: response.data.items,
-          },
-        });
-      }
-    }).catch(()=>{
-      setListExistWindowOpen(true);
-    });
+    TodoListService.create(newList)
+      .then((response) => {
+        if (response.data) {
+          dispatch({
+            type: ADD_LIST,
+            List: response.data,
+          });
+        }
+      })
+      .catch((error) => {
+        console.log(error.toString());
+        console.log(error.response.data);
+        setListExistWindowOpen(true);
+      });
 
     setOpen(false);
     //if only one list left then
@@ -329,78 +229,23 @@ export default function TodoApp() {
   function resetApp() {
     setShowForChange(false);
     setOpen(false);
-    TodoListService.removeAll().then((response)=>{
-      if(response.data){
-        dispatch({type:"DELETE_ALL_LIST", payload: null});
-        dispatch({type:"DELETE_ALL_ITEMS", payload:null});
+    TodoListService.removeAll().then((response) => {
+      if (response.data) {
+        dispatch({ type: DELETE_ALL_LIST, payload: null });
+        dispatch({ type: DELETE_ALL_ITEMS, payload: null });
       }
-    })
+    });
   }
   return (
     <div className={classes.root}>
       <React.Fragment>
         <CssBaseline />
         <Container fixed>
-          {/*snackbar for move item to another list*/}
-          <Snackbar
-            open={moveItemSnackBarOpen}
-            autoHideDuration={6000}
-            onClose={handleMoveItemSnackBarClose}
-          >
-            <Alert onClose={handleMoveItemSnackBarClose} severity="info">
-              Successfully moved Item!
-            </Alert>
-          </Snackbar>
-          {/*snackbar for create new item*/}
-          <Snackbar
-            open={NewItemSnackBar}
-            autoHideDuration={6000}
-            onClose={handleNewItemClose}
-          >
-            <Alert onClose={handleNewItemClose} severity="success">
-              Successfully created Item!
-            </Alert>
-          </Snackbar>
-          {/*snackbar for delete existing item*/}
-          <Snackbar
-            open={ItemSnackBarOpen}
-            autoHideDuration={6000}
-            onClose={ItemDeleteSnackBarClose}
-          >
-            <Alert onClose={ItemDeleteSnackBarClose} severity="warning">
-              Delete item successful!
-            </Alert>
-          </Snackbar>
-
           {/* List name already exist dialog*/}
-          <div>
-            <Dialog
-              open={listExistWindowOpen}
-              onClose={listExistWindowClose}
-              aria-labelledby="draggable-dialog-title"
-            >
-              <DialogTitle
-                style={{ cursor: "move" }}
-                id="draggable-dialog-title"
-              >
-                List name already exist
-              </DialogTitle>
-              <DialogContent>
-                <DialogContentText>
-                  Please consider another List name
-                </DialogContentText>
-              </DialogContent>
-              <DialogActions>
-                <Button
-                  autoFocus
-                  onClick={listExistWindowClose}
-                  color="primary"
-                >
-                  Cancel
-                </Button>
-              </DialogActions>
-            </Dialog>
-          </div>
+          <ListAlreadyExistHandler
+            listExistWindowOpen={listExistWindowOpen}
+            listExistWindowClose={listExistWindowClose}
+          />
           {/* Change List name dialog*/}
           <div>
             <Dialog

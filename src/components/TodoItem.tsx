@@ -8,42 +8,21 @@ import {
   MenuItem,
   Select,
   TextField,
-  Theme,
-  withStyles,
 } from "@material-ui/core";
 import DeleteIcon from "@material-ui/icons/Delete";
-import { green, purple } from "@material-ui/core/colors";
 import PresentToAllIcon from "@material-ui/icons/PresentToAll";
 import { useDispatch, useSelector } from "react-redux";
 import TodoItemService from "../Services/TodoItemService";
-import { TodoItemModel, TodoListModel } from "../moduls";
 import Dialog from "@material-ui/core/Dialog";
 import DialogTitle from "@material-ui/core/DialogTitle";
 import DialogActions from "@material-ui/core/DialogActions";
-import Container from "@material-ui/core/Container";
-//for style of color button
-
-//drag down menu style
-const ITEM_HEIGHT = 48;
-const ITEM_PADDING_TOP = 8;
-const MenuProps = {
-  PaperProps: {
-    style: {
-      maxHeight: ITEM_HEIGHT * 4.5 + ITEM_PADDING_TOP,
-      width: 250,
-    },
-  },
-};
-
-const ColorButton = withStyles((theme: Theme) => ({
-  root: {
-    color: theme.palette.getContrastText(purple[500]),
-    backgroundColor: purple[500],
-    "&:hover": {
-      backgroundColor: purple[700],
-    },
-  },
-}))(Button);
+import {
+  DELETE_ITEM,
+  MOVE_ITEM,
+  TOGGLE_COMPLETE_ITEM,
+  UPDATE_ITEM,
+} from "../redux/actionTypes/ItemActionTypes";
+import {ColorButton, MenuProps} from "../UIStyles/TodoItemStyles";
 
 interface itemInterface {
   id: string;
@@ -62,9 +41,9 @@ function TodoItem(props: itemInterface) {
   const item = useSelector((state) => selectItemById(state, props.id));
   const todoLists = useSelector(selectLists);
   const dispatch = useDispatch();
+
   //variable for move item window open
   const [moveItemWindowOpen, setMoveItemWindowOpen] = useState(false);
-
 
   //set dragdown menu stuff
   const [
@@ -86,7 +65,7 @@ function TodoItem(props: itemInterface) {
     TodoItemService.updateItem(newItem).then((response) => {
       if (response.data) {
         dispatch({
-          type: "UPDATE_ITEM",
+          type: UPDATE_ITEM,
           payload: { id: response.data.id, content: response.data.content },
         });
       }
@@ -99,7 +78,7 @@ function TodoItem(props: itemInterface) {
     };
     TodoItemService.updateItem(newItem).then((response) => {
       if (response.data) {
-        dispatch({ type: "TOGGLE_COMPLETE_ITEM", payload: response.data.id });
+        dispatch({ type: TOGGLE_COMPLETE_ITEM, id: response.data.id });
       }
     });
   }
@@ -107,8 +86,8 @@ function TodoItem(props: itemInterface) {
     TodoItemService.deleteItem(props.listId, props.id).then((response) => {
       if (response.data) {
         dispatch({
-          type: "DELETE_ITEM",
-          payload: item.id,
+          type: DELETE_ITEM,
+          id: item.id,
         });
       }
     });
@@ -130,11 +109,9 @@ function TodoItem(props: itemInterface) {
       .then((response) => {
         if (response.data) {
           dispatch({
-            type: "MOVE_ITEM",
-            payload: {
-              itemId: item.id,
-              targetId: currentDragDownMenuList!.listId,
-            },
+            type: MOVE_ITEM,
+            id: item.id,
+            targetId: currentDragDownMenuList!.listId,
           });
         }
       })

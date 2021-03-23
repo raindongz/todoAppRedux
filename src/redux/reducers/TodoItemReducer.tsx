@@ -1,37 +1,37 @@
 import React from "react";
 import TodoItemService from "../../Services/TodoItemService";
-import {TodoItemModel} from "../../moduls";
+import * as ItemActionTypes from "../actionTypes/ItemActionTypes"
 
 const initialState:TodoItemModel[] = [];
 
-function TodoItemReducer(state = initialState, action: any) {
+function TodoItemReducer(state = initialState, action:ItemAction) {
   switch (action.type) {
     //add todo item
-    case "GET_ALL_ITEMS":{
-      return action.payload;
+    case ItemActionTypes.GET_ALL_ITEMS:{
+      return action.items;
     }
-    case "ADD_ITEM": {
+    case ItemActionTypes.ADD_ITEM: {
       return [
           ...state,
         {
-          id: action.payload.id,
-          content: action.payload.content,
-          completed: action.payload.completed,
-          listId: action.payload.listId,
-          userId: action.payload.userId,
-          createdDate: action.payload.createdDate,
-          lastModifiedDate: action.payload.lastModifiedDate,
+          id: action.todoItem.id,
+          content: action.todoItem.content,
+          completed: action.todoItem.completed,
+          listId: action.todoItem.listId,
+          userId: action.todoItem.userId,
+          createdDate: action.todoItem.createdDate,
+          lastModifiedDate: action.todoItem.lastModifiedDate,
         }
       ];
     }
     //delete item
-    case "DELETE_ITEM": {
-      return state.filter((item)=> item.id !== action.payload);
+    case ItemActionTypes.DELETE_ITEM: {
+      return state.filter((item)=> item.id !== action.id);
     }
     //toggle item completed state
-    case "TOGGLE_COMPLETE_ITEM": {
+    case ItemActionTypes.TOGGLE_COMPLETE_ITEM: {
       return state.map((item)=>{
-        if(item.id === action.payload){
+        if(item.id === action.id){
           return {
             ...item,
             completed: !item.completed,
@@ -41,31 +41,31 @@ function TodoItemReducer(state = initialState, action: any) {
       });
     }
 
-    case "UPDATE_ITEM": {
+    case ItemActionTypes.UPDATE_ITEM: {
       return state.map((item)=>{
-        if(item.id === action.payload.id){
+        if(item.id === action.id){
           return {
             ...item,
-            content:action.payload.content,
+            content:action.content,
           }
         }
         return item;
       });
     }
 
-    case "MOVE_ITEM":{
+    case ItemActionTypes.MOVE_ITEM:{
       return state.map((item)=>{
-        if(item.id === action.payload.itemId){
+        if(item.id === action.id){
           return {
             ...item,
-            listId: action.payload.targetId,
+            listId: action.targetId,
           }
         }
         return item;
       })
     }
 
-    case "DELETE_ALL_ITEMS" :{
+    case ItemActionTypes.DELETE_ALL_ITEMS :{
       return [];
     }
 

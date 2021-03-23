@@ -1,0 +1,5 @@
+export const GET_ALL_LIST= "GET_ALL_LIST";
+export const ADD_LIST="ADD_LIST";
+export const DELETE_LIST="DELETE_LIST";
+export const CHANGE_LIST_NAME="CHANGE_LIST_NAME";
+export const DELETE_ALL_LIST="DELETE_ALL_LIST";
