@@ -22,22 +22,21 @@ import {
   TOGGLE_COMPLETE_ITEM,
   UPDATE_ITEM,
 } from "../redux/actionTypes/ItemActionTypes";
-import {ColorButton, MenuProps} from "../UIStyles/TodoItemStyles";
+import { ColorButton, MenuProps } from "../UIStyles/TodoItemStyles";
+import CustomizedSnackbars from "../MaterialUIComponents/SnackBar";
 
 interface itemInterface {
   id: string;
   listId: string;
 }
 
-const selectItemById = (state: any, id: any) => {
-  return state.todoItems.find((item: itemInterface) => item.id === id);
-};
-
-const selectLists = (state: any) => {
-  return state.todoLists.map((list: any) => list);
-};
-
 function TodoItem(props: itemInterface) {
+  const selectLists = (state: any) => {
+    return state.todoLists.map((list: any) => list);
+  };
+  const selectItemById = (state: any, id: any) => {
+    return state.todoItems.find((item: itemInterface) => item.id === id);
+  };
   const item = useSelector((state) => selectItemById(state, props.id));
   const todoLists = useSelector(selectLists);
   const dispatch = useDispatch();
@@ -45,6 +44,17 @@ function TodoItem(props: itemInterface) {
   //variable for move item window open
   const [moveItemWindowOpen, setMoveItemWindowOpen] = useState(false);
 
+  const [snackBarOpen, setSnackBarOpen] = React.useState(false);
+  const handleSnackBarClose = (
+    event?: React.SyntheticEvent,
+    reason?: string
+  ) => {
+    if (reason === "clickaway") {
+      return;
+    }
+
+    setSnackBarOpen(false);
+  };
   //set dragdown menu stuff
   const [
     currentDragDownMenuList,
@@ -64,9 +74,11 @@ function TodoItem(props: itemInterface) {
     };
     TodoItemService.updateItem(newItem).then((response) => {
       if (response.data) {
+        console.log(response.data.content);
         dispatch({
           type: UPDATE_ITEM,
-          payload: { id: response.data.id, content: response.data.content },
+          id: response.data.id,
+          content: response.data.content,
         });
       }
     });
@@ -83,6 +95,7 @@ function TodoItem(props: itemInterface) {
     });
   }
   function handleTodoRemove() {
+    setSnackBarOpen(true);
     TodoItemService.deleteItem(props.listId, props.id).then((response) => {
       if (response.data) {
         dispatch({
@@ -122,6 +135,11 @@ function TodoItem(props: itemInterface) {
   return (
     <Grid container spacing={1} className="todo-item">
       <Grid>
+        <CustomizedSnackbars
+          severity={"success"}
+          snackBarOpen={snackBarOpen}
+          handleSnackBarClose={handleSnackBarClose}
+        />
         {/*move Item Window dialog*/}
         <div>
           <Dialog
@@ -172,7 +190,9 @@ function TodoItem(props: itemInterface) {
             textDecoration: item.completed ? "line-through" : undefined,
           }}
           value={item.content}
-          onChange={handleTodoUpdate}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+            handleTodoUpdate(e)
+          }
         />
       </Grid>
       <Grid item xs={5}>

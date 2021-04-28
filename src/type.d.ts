@@ -21,14 +21,14 @@ type ListAction = {
   listName: string;
   userId: string;
   items: string[];
-  List:TodoListModel;
-  todoLists:TodoListModel[];
+  List: TodoListModel;
+  todoLists: TodoListModel[];
 };
 
 type ItemAction = {
   type: string;
-  items:TodoItemModel[];
-  todoItem:TodoItemModel;
+  items: TodoItemModel[];
+  todoItem: TodoItemModel;
   id: string;
   content: string;
   completed: boolean;
@@ -36,5 +36,5 @@ type ItemAction = {
   userId: string;
   createdDate: Date;
   lastModifiedDate: Date;
-  targetId:string;
+  targetId: string;
 };

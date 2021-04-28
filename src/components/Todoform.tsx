@@ -9,14 +9,13 @@ import {
 import React from "react";
 import { useDispatch, useSelector } from "react-redux";
 import TodoItemService from "../Services/TodoItemService";
-import {ADD_ITEM} from "../redux/actionTypes/ItemActionTypes";
+import { ADD_ITEM } from "../redux/actionTypes/ItemActionTypes";
 
 interface TodoformInterface {
   listId: string;
 }
 
 const TodoFormView = (props: TodoformInterface) => {
-
   const dispatch = useDispatch();
   // Create ref for form input
   const inputRef = React.useRef<HTMLInputElement>(null);
@@ -45,7 +44,7 @@ const TodoFormView = (props: TodoformInterface) => {
       if (response.data) {
         dispatch({
           type: ADD_ITEM,
-          todoItem:response.data,
+          todoItem: response.data,
         });
       }
     });
@@ -58,7 +57,6 @@ const TodoFormView = (props: TodoformInterface) => {
   }
   return (
     <div className="todo-form">
-
       <Grid container spacing={2}>
         <Grid item xs={10}>
           <TextField
